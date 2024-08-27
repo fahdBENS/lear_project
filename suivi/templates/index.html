@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi des Lots et Processus</title>
+    {% load static %}
+    <style>
+        /* Styles généraux */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e1e1e1;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+        .header img {
+            max-width: 120px;
+            height: auto;
+        }
+        .logout-form {
+            margin: 0;
+        }
+        .logout-button {
+            padding: 8px 16px;
+            background-color: #dc3545;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+        .form-group select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .button {
+            padding: 8px 16px;
+            font-size: 14px;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .button.start {
+            background-color: #28a745;
+        }
+        .button.start:hover {
+            background-color: #218838;
+        }
+        .button.end {
+            background-color: #dc3545;
+        }
+        .button.end:hover {
+            background-color: #c82333;
+        }
+        .view-messages-button,
+        .add-lot-button {
+            background-color: #007bff;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #ffffff;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        .view-messages-button:hover,
+        .add-lot-button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed; /* Assure que les colonnes ne changent pas de largeur au défilement */
+        }
+        thead {
+            position: sticky;
+            top: 0; /* Positionne le sticky en haut */
+            z-index: 2; /* Assure que l'en-tête reste au-dessus des autres éléments */
+        }
+        thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #e1e1e1;
+            padding: 10px;
+            text-align: center;
+            vertical-align: middle;
+            min-width: 100px;
+            word-wrap: break-word;
+            font-size: 12px;
+        }
+        tbody td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+        .circle {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .green {
+            background-color: #28a745;
+        }
+        .yellow {
+            background-color: #ffc107;
+        }
+        .red {
+            background-color: #dc3545;
+        }
+        .blue {
+            background-color: #007bff;
+        }
+        .time-taken {
+            display: block;
+            font-size: 12px;
+            color: #333;
+            margin-top: 3px;
+        }
+        /* Styles pour les filtres */
+        .filter-input {
+            width: 100%;
+            padding: 5px;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .filter-input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        /* Styles pour la légende des couleurs */
+        .legend-container {
+            margin-bottom: 10px; /* Réduit l'espace en dessous de la légende */
+            padding: 5px 10px; /* Réduit le padding autour de la légende */
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            align-items: center; /* Aligne verticalement la légende */
+            gap: 10px; /* Espace entre les éléments de la légende */
+        }
+        .legend-container h2 {
+            margin: 0;
+            color: #333;
+            font-size: 16px; /* Réduit la taille du texte du titre */
+        }
+        .legend-list {
+            display: flex; /* Affiche les items de légende en ligne */
+            flex-wrap: wrap; /* Permet à la liste de se répartir sur plusieurs lignes si nécessaire */
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            gap: 15px; /* Espace entre les éléments de la légende */
+        }
+        .legend-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0; /* Supprime la marge inférieure pour une meilleure alignement */
+        }
+        .legend-list .circle {
+            width: 16px; /* Taille réduite des cercles */
+            height: 16px; /* Taille réduite des cercles */
+            margin-right: 8px; /* Espace réduit à droite du cercle */
+        }
+        .legend-list span {
+            font-size: 14px; /* Réduit la taille du texte */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{% static 'images/download.png' %}" alt="Logo"/>
+            <h1>Suivi des Lots et Processus</h1>
+            <div class="logout-form">
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">Déconnexion</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="legend-container">
+            <h2>Légende des Couleurs</h2>
+            <ul class="legend-list">
+                <li><span class="circle blue"></span> Pas encore commencé</li>
+                <li><span class="circle yellow"></span> En cours</li>
+                <li><span class="circle green"></span> Terminé à temps</li>
+                <li><span class="circle red"></span> Terminé mais pas à temps</li>
+            </ul>
+        </div>
+
+        <form method="post" id="process-form">
+            {% csrf_token %}
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="{{ form.lot.id_for_label }}">{{ form.lot.label }}</label>
+                    {{ form.lot }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.processus.id_for_label }}">{{ form.processus.label }}</label>
+                    {{ form.processus }}
+                </div>
+                <div class="button-group">
+                    <button type="submit" name="start" class="button start" onclick="return confirmAction('Début');">Début</button>
+                    <button type="submit" name="end" class="button end" onclick="return confirmAction('Fin');">Fin</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="button-group">
+            <a href="{% url 'add_lot' %}" class="add-lot-button">Ajouter un Lot</a>
+            <a href="{% url 'upload_lots' %}" class="add-lot-button">Importer des Lots</a>
+            <a href="{% url 'reclamer_lot' %}" class="add-lot-button">Réclamer un Lot</a>
+        </div>
+
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Projet</th>
+                    <th>Référence</th>
+                    <th>Type</th>
+                    <th>Planificateur</th>
+                    <th>EPN</th>
+                    <th>CPN</th>
+                    <th>Quantité</th>
+                    {% for proc in data.0.processus %}
+                        <th>{{ proc.processus.nom_proc }}</th>
+                    {% endfor %}
+                    <th>TP1</th>
+                    <th>TP2</th>
+                    <th>Messages</th>
+                </tr>
+                <tr>
+                    <th><input type="text" id="filter-week" class="filter-input" placeholder="Filtrer" oninput="filterTable()"></th>
+                    <th><input type="text" id="filter-projet" class="filter-input" placeholder="Filtrer" oninput="filterTable()"></th>
+                    <th><input type="text" id="filter-ref" class="filter-input" placeholder="Filtrer" oninput="filterTable()"></th>
+                    <th><input type="text" id="filter-type" class="filter-input" placeholder="Filtrer" oninput="filterTable()"></th>
+                    <th><input type="text" id="filter-planificateur" class="filter-input" placeholder="Filtrer" oninput="filterTable()"></th>
+                    <th><input type="text" id="filter-epn" class="filter-input" placeholder="Filtrer" oninput="filterTable()"></th>
+                    <th><input type="text" id="filter-cpn" class="filter-input" placeholder="Filtrer" oninput="filterTable()"></th>
+                    <th><input type="text" id="filter-quantite" class="filter-input" placeholder="Filtrer" oninput="filterTable()"></th>
+                    {% for proc in data.0.processus %}
+                        <th></th>
+                    {% endfor %}
+                    <th><input type="text" id="filter-tp1" class="filter-input" placeholder="Filtrer TP1" oninput="filterTable()"></th>
+                    <th><input type="text" id="filter-tp2" class="filter-input" placeholder="Filtrer TP2" oninput="filterTable()"></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data %}
+                <tr>
+                    <td>{{ item.lot.week|default:"-" }}</td>
+                    <td>{{ item.lot.projet|default:"-" }}</td>
+                    <td>{{ item.lot.ref|default:"-" }}</td>
+                    <td>{{ item.lot.type|default:"-" }}</td>
+                    <td>{{ item.lot.planificateur|default:"-" }}</td>
+                    <td>{{ item.lot.epn|default:"-" }}</td>
+                    <td>{{ item.lot.cpn|default:"-" }}</td>
+                    <td>{{ item.lot.quantite|default:"-" }}</td>
+                    {% for proc_data in item.processus %}
+                    <td>
+                        <div class="circle 
+                            {% if not proc_data.debut %}blue
+                            {% elif proc_data.debut and proc_data.fin %}
+                                {% if proc_data.temps_pris <= proc_data.processus.duree %}green
+                                {% else %}red
+                                {% endif %}
+                            {% elif proc_data.debut %}yellow
+                            {% else %}red
+                            {% endif %}"></div>
+                        {% if proc_data.temps_pris %}
+                            <span class="time-taken">{{ proc_data.temps_pris }} min</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td>{{ item.tp1|default:"-" }}</td>
+                    <td>{{ item.tp2|default:"-" }}</td>
+                    <td>
+                        <a href="{% url 'lot_messages' item.lot.ref %}" class="view-messages-button">Voir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function filterTable() {
+            var table = document.getElementById('data-table');
+            var filters = {
+                week: document.getElementById('filter-week').value.toLowerCase(),
+                projet: document.getElementById('filter-projet').value.toLowerCase(),
+                ref: document.getElementById('filter-ref').value.toLowerCase(),
+                type: document.getElementById('filter-type').value.toLowerCase(),
+                planificateur: document.getElementById('filter-planificateur').value.toLowerCase(),
+                epn: document.getElementById('filter-epn').value.toLowerCase(),
+                cpn: document.getElementById('filter-cpn').value.toLowerCase(),
+                quantite: document.getElementById('filter-quantite').value.toLowerCase(),
+                tp1: document.getElementById('filter-tp1').value.toLowerCase(), // TP1 est avant le dernier élément
+                tp2: document.getElementById('filter-tp2').value.toLowerCase() // TP2 est avant le dernier élément
+            };
+
+            var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName('td');
+                var week = cells[0].textContent.toLowerCase();
+                var projet = cells[1].textContent.toLowerCase();
+                var ref = cells[2].textContent.toLowerCase();
+                var type = cells[3].textContent.toLowerCase();
+                var planificateur = cells[4].textContent.toLowerCase();
+                var epn = cells[5].textContent.toLowerCase();
+                var cpn = cells[6].textContent.toLowerCase();
+                var quantite = cells[7].textContent.toLowerCase();
+                var tp1 = cells[cells.length - 3].textContent.toLowerCase(); // TP1 est avant le dernier élément
+                var tp2 = cells[cells.length - 2].textContent.toLowerCase(); // TP2 est avant le dernier élément
+
+                if (
+                    week.indexOf(filters.week) > -1 &&
+                    projet.indexOf(filters.projet) > -1 &&
+                    ref.indexOf(filters.ref) > -1 &&
+                    type.indexOf(filters.type) > -1 &&
+                    planificateur.indexOf(filters.planificateur) > -1 &&
+                    epn.indexOf(filters.epn) > -1 &&
+                    cpn.indexOf(filters.cpn) > -1 &&
+                    quantite.indexOf(filters.quantite) > -1 &&
+                    tp1.indexOf(filters.tp1) > -1 &&
+                    tp2.indexOf(filters.tp2) > -1
+                ) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

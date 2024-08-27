@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi des Lots et Processus</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            position: relative; /* Nécessaire pour positionner le bouton de déconnexion */
+        }
+        .container {
+            width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative; /* Nécessaire pour la position absolue du bouton de déconnexion */
+        }
+        .button {
+            margin: 5px;
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: purple;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none; /* Enlève le soulignement pour les liens */
+            display: inline-block; /* Pour gérer la taille du bouton */
+        }
+        .button:hover {
+            background-color: darkpurple; /* Changement de couleur au survol */
+        }
+        .logout-form {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .logout-button {
+            padding: 10px 20px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .logout-button:hover {
+            background-color: darkred;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        .circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .green {
+            background-color: green;
+        }
+        .yellow {
+            background-color: yellow;
+        }
+        .red {
+            background-color: red;
+        }
+        .blue {
+            background-color: blue;
+        }
+        .form-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin: 0;
+        }
+        .form-group label {
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .form-group select {
+            margin-right: 10px;
+            flex-shrink: 0;
+            width: 150px;
+            padding: 8px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        .add-lot-button {
+            display: inline-block;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .time-taken {
+            display: block;
+            font-size: 14px;
+            color: #333;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="logout-form">
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Déconnexion</button>
+        </form>
+    </div>
+    <div class="container">
+        <h1>Suivi des Lots et Processus</h1>
+        <form method="post" id="process-form">
+            {% csrf_token %}
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="{{ form.lot.id_for_label }}">{{ form.lot.label }}</label>
+                    {{ form.lot }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.processus.id_for_label }}">{{ form.processus.label }}</label>
+                    {{ form.processus }}
+                </div>
+                <div class="button-group">
+                    <button type="submit" name="start" class="button" onclick="return confirmAction('Début');">Début</button>
+                    <button type="submit" name="end" class="button" onclick="return confirmAction('Fin');">Fin</button>
+                </div>
+            </div>
+        </form>
+        <a href="{% url 'add_lot' %}" class="button add-lot-button">Ajouter un Lot</a>
+        <a href="{% url 'upload_lots' %}" class="button add-lot-button">Importer des Lots</a>
+        <a href="{% url 'reclamer_lot' %}" class="button add-lot-button">Réclamer un Lot</a>
+        <table>
+            <thead>
+                <tr>
+                    <th>Lot</th>
+                    <th>Quantité</th>
+                    {% for proc in data.0.processus %}
+                        <th>{{ proc.processus.nom_proc }}</th>
+                    {% endfor %}
+                    <th>Messages</th> <!-- Colonne pour le bouton Messages -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data %}
+                <tr>
+                    <td>{{ item.lot.ref }}</td>
+                    <td>{{ item.lot.quantite }}</td>
+                    {% for proc_data in item.processus %}
+                    <td>
+                        <div class="circle 
+                            {% if not proc_data.debut %}blue
+                            {% elif proc_data.debut and proc_data.fin %}
+                                {% if proc_data.temps_pris <= proc_data.processus.duree %}green
+                                {% else %}red
+                                {% endif %}
+                            {% elif proc_data.debut %}yellow
+                            {% else %}red
+                            {% endif %}"></div>
+                        {% if proc_data.temps_pris is not None %}
+                            <span class="time-taken">{{ proc_data.temps_pris }} min</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td>
+                        <a href="{% url 'lot_messages' item.lot.ref %}" class="button">Voir Messages</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function confirmAction(action) {
+            return confirm("Êtes-vous sûr de vouloir " + action + " ce processus ?");
+        }
+    </script>
+</body>
+</html>

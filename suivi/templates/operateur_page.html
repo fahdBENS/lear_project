@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page de l'Opérateur</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .header img {
+            width: 150px;
+            margin-right: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+        .logout-form {
+            margin: 0;
+        }
+        .logout-button {
+            padding: 10px 20px;
+            background-color: #ff4c4c;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor nearer-pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .logout-button:hover {
+            background-color: #d43f3f;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .button.confirm {
+            background-color: #007bff;
+        }
+        .button.confirm:hover {
+            background-color: #0056b3;
+        }
+        .reclamation-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .reclamation-link:hover {
+            background-color: #0056b3;
+        }
+        .file-upload-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+    </style>
+    {% load static %}
+    <script>
+        function setFocus() {
+            document.getElementById('lot').focus();
+        }
+        window.onload = setFocus;
+
+        function confirmAction() {
+            return confirm("Êtes-vous sûr de vouloir confirmer cette action ?");
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{% static 'images/download.png' %}" alt="Logo de l'entreprise">
+            <h1>Together we can</h1>
+            <div class="logout-form">
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">Déconnexion</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Formulaire pour confirmer un lot et un processus -->
+        <form method="post" action="{% url 'operateur_page' %}">
+            {% csrf_token %}
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="lot">Lot</label>
+                    <input type="text" name="lot" id="lot" placeholder="Scannez le code du lot" autocomplete="off" required>
+                    {% if form.lot.errors %}
+                        <div class="error">{{ form.lot.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="processus">Processus</label>
+                    <select name="processus" id="processus" required>
+                        <option value="" disabled selected>Choisissez un processus</option>
+                        {% for proc in processus %}
+                            <option value="{{ proc.id }}">{{ proc.nom_proc }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.processus.errors %}
+                        <div class="error">{{ form.processus.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="button-group">
+                    <button type="submit" name="confirm" class="button confirm" onclick="return confirmAction();">Confirmer</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Formulaire pour télécharger un fichier Excel -->
+        <form method="post" action="{% url 'upload_lots_from_file' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="file-upload-group">
+                <div class="form-group">
+                    <label for="file">Télécharger un fichier Excel</label>
+                    <input type="file" name="file" id="file" accept=".xls,.xlsx" required>
+                </div>
+                <div class="form-group">
+                    <label for="processus_file">Processus</label>
+                    <select name="processus" id="processus_file" required>
+                        <option value="" disabled selected>Choisissez un processus</option>
+                        {% for proc in processus %}
+                            <option value="{{ proc.id }}">{{ proc.nom_proc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button type="submit" name="upload" class="button confirm">Confirmer plusieurs</button>
+                </div>
+            </div>
+        </form>
+
+        <a href="{% url 'reclamer_lot' %}" class="reclamation-link">Réclamer un Lot</a>
+    </div>
+</body>
+</html>
